@@ -46,7 +46,7 @@ def info_card(info, user_id):
 
 @plugin.handle({"金币签到", "轮盘签到"}, {"user_id", "group_id", "nickname", "avatar"})
 async def _(event: Event) -> Result:
-    account = manager.locate_account(event)
+    account = manager.account(event)
     user, group_account = account
     user.avatar_url = event.avatar
     today = datetime.today()

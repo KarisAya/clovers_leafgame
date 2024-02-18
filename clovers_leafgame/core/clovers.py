@@ -34,7 +34,7 @@ class Event:
         return self.group_id is None
 
     @property
-    def avatar(self) -> list:
+    def avatar(self) -> str:
         return self.raw_event.kwargs["avatar"]
 
     @property

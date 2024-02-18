@@ -120,25 +120,23 @@ class User(BaseModel):
     extra: dict = {}
 
     def connecting(self, group_id: str = None) -> Account:
+        """连接到账户"""
         group_id = group_id or self.connect
         return self.accounts.setdefault(group_id, Account(nickname=self.nickname))
 
-    # def nickname(account: UserAccount):
-    #     """
-    #     获取用户名
-    #     """
-    #     user, group_account = account
-    #     return group_account.nickname or user.nickname
-
     def locate_bank(self, group_id: str, domain: int) -> Bank:
-        return {
-            1: lambda: self.bank,
-            2: lambda: self.connecting(group_id).bank,
-            3: lambda: self.connecting(group_id).invest,
-        }.get(domain)()
+        return locate_bank(self, group_id, domain).get(domain)
 
     def deal(self, group_id: str, prop: Prop, unsettled: int):
         return prop.deal(self.locate_bank(group_id, prop.domain), unsettled)
+
+
+def locate_bank(user: User, group_id: str, domain: int) -> Bank:
+    {
+        1: user.bank,
+        2: user.connecting(group_id).bank,
+        3: user.connecting(group_id).invest,
+    }.get(domain)
 
 
 class Group(BaseModel):

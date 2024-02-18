@@ -99,18 +99,3 @@ class Manager:
         account = user.connecting(group_id)
         account.nickname = event.nickname
         return user, account
-
-    def nickname(account: UserAccount):
-        """
-        获取用户名
-        """
-        user, group_account = account
-        return group_account.nickname or user.nickname
-
-    def locate_bank(self, user_account: UserAccount, domain: int) -> Bank:
-        locate_bank = self.domain_bank.get(domain)
-        if locate_bank:
-            return locate_bank(user_account)
-
-    def deal(self, user_account: UserAccount, prop: Prop, unsettled: int):
-        return prop.deal(self.locate_bank(user_account, prop.domain), unsettled)
