@@ -83,6 +83,14 @@ class Prop(Item):
 class Stock(Item, BaseModel):
     issuance: int = 0
     """股票发行量"""
+    time: float = 0.0
+    """注册时间"""
+    stock_gold: float = 0.0
+    """股票资产"""
+    float_gold: float = 0.0
+    """浮动资产"""
+    group_gold: float = 0.0
+    """全群资产"""
 
 
 class Account(BaseModel):
