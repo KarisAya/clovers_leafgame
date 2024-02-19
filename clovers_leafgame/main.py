@@ -15,9 +15,16 @@ from .core.utils import to_int
 from .config import config, BG_PATH
 from .clover import plugin, check_to_me, check_superuser, check_group_admin, check_at
 from .library import prop_search, GOLD, VIP_CARD, AIR_PACK, LICENSE, gacha
-from .utils.linecard import FontManager, linecard_to_png, linecard, info_splicing
+from .utils.linecard import FontManager, info_splicing
 from .utils.tools import download_url
-from .output import bank_to_data, bank_card, prop_card, invest_card, gacha_report_card
+from .output import (
+    bank_to_data,
+    bank_card,
+    prop_card,
+    invest_card,
+    gacha_report_card,
+)
+
 
 sign_gold = config.sign_gold
 revolt_gold = config.revolt_gold
@@ -26,8 +33,6 @@ gacha_gold = config.gacha_gold
 
 manager = Manager(Path(config.main_path) / "russian_data.json")
 
-font_manager = FontManager(config.fontname, config.fallback_fonts, (30, 40, 60))
-
 
 def info_card(info, user_id):
     extra = manager.locate_user(user_id).extra
@@ -35,12 +40,11 @@ def info_card(info, user_id):
     bg_path = BG_PATH / f"{user_id}.png"
     if not bg_path.exists():
         bg_path = BG_PATH / "default.png"
-    return info_splicing(info, bg_path, spacing=10, BG_type=BG_type)
     try:
         return info_splicing(info, bg_path, spacing=10, BG_type=BG_type)
     except:
-        del extra["BG_type"]
-        return f"你的自定义背景 {BG_type} 出错了，背景已重置。"
+        if "BG_type" in extra:
+            del extra["BG_type"]
 
 
 @plugin.handle({"金币签到", "轮盘签到"}, {"user_id", "group_id", "nickname", "avatar"})
@@ -280,9 +284,9 @@ async def _(event: Event) -> Result:
     flag = len(props) < 10 or event.single_arg() in {"信息", "介绍", "详情"}
     data = bank_to_data(props, prop_search)
     if flag:
-        info = bank_card(data)(font_manager)
+        info = bank_card(data)
     else:
-        info = [prop_card(data)(font_manager)]
+        info = [prop_card(data)]
     return info_card(info, event.user_id)
 
 
@@ -295,7 +299,7 @@ async def _(event: Event) -> Result:
     if not invest:
         return "您的资产是空的。"
     return info_card(
-        [invest_card(bank_to_data(invest, manager.stock_search))(font_manager)],
+        [invest_card(bank_to_data(invest, manager.stock_search))],
         event.user_id,
     )
 
@@ -311,11 +315,11 @@ async def _(event: Event) -> Result:
     if command == "查看":
         bank_data = bank_to_data(group.bank, prop_search)
         if len(bank_data) < 6:
-            info = bank_card(bank_data)(font_manager)
+            info = bank_card(bank_data)
         else:
-            info = [prop_card(bank_data)(font_manager)]
+            info = [prop_card(bank_data)]
         invest_data = bank_to_data(group.bank, manager.stock_search)
-        info.append(invest_card(invest_data)(font_manager))
+        info.append(invest_card(invest_data))
         return info_card(info, user_id)
     sign, name = command[0], command[1:]
     user = manager.locate_user(user_id)
@@ -391,7 +395,7 @@ async def _(event: Event) -> Result:
         info.append(prop_card(data, "群内道具"))
     if data := prop_data[0]:
         info.append(prop_card(data, "未获取"))
-    return info_card([x(font_manager) for x in info], user_id)
+    return info_card(info, user_id)
 
 
 """+++++++++++++++++++++++++++++++++++++

@@ -1,7 +1,14 @@
 from .core.data import Bank, Item, Prop, Stock
 from .core.clovers import Event
-from .utils.linecard import FontManager, linecard_to_png, linecard, info_splicing
+from .utils.linecard import FontManager, linecard
 from collections.abc import Callable
+from .config import config
+
+font_manager = FontManager(
+    config.fontname,
+    config.fallback_fonts,
+    (30, 40, 60),
+)
 
 
 def end_line(tip: str) -> str:
@@ -15,69 +22,56 @@ def bank_to_data(bank: Bank, locate_item):
 def bank_card(data: list[tuple[Prop, int]]):
     data.sort(key=lambda x: x[0].rare)
 
-    def output(font_manager: FontManager):
-        def result(prop: Prop, n: int):
-            quant = {0: "天", 1: "个"}[prop.flow]
-            return linecard(
-                (
-                    f"[color][{prop.color}]【{prop.name}】[nowrap][passport]\n[right]{'{:,}'.format(n)}{quant}\n"
-                    "----\n"
-                    f"[font][][40]{prop.intro.replace('\n','[passport]\n')}\n[font][][40][right]{prop.tip}"
-                ),
-                font_manager,
-                40,
-                spacing=1.5,
-                width=880,
-                padding=(0, 0),
-                autowrap=True,
-            )
-
-        return [result(*args) for args in data]
-
-    return output
-
-
-def prop_card(data: list[tuple[Prop, int]], endline: str = "仓库列表"):
-    data.sort(key=lambda x: x[0].rare)
-
-    def output(font_manager: FontManager):
-        def result(prop: Prop, n: int):
-            quant = {0: "天", 1: "个"}[prop.flow]
-
-        def result(prop: Prop, n: int):
-            quant = {0: "天", 1: "个"}.get(prop.flow)
-            return (
-                f"[color][{prop.color}]{prop.name}[nowrap][passport]\n"
-                f"[pixel][450]{prop.rare*'☆'}[nowrap][passport]\n"
-                f"[right]{'{:,}'.format(n)}{quant}"
-            )
-
+    def result(prop: Prop, n: int):
+        quant = {0: "天", 1: "个"}[prop.flow]
         return linecard(
-            "\n".join(result(*args) for args in data) + "\n" + end_line(endline),
+            (
+                f"[color][{prop.color}]【{prop.name}】[nowrap][passport]\n[right]{'{:,}'.format(n)}{quant}\n"
+                f"----\n{prop.intro.replace('\n','[passport]\n')}\n[right]{prop.tip}"
+            ),
             font_manager,
             40,
             spacing=1.5,
             width=880,
             padding=(0, 0),
+            autowrap=True,
         )
 
-    return output
+    return [result(*args) for args in data]
+
+
+def prop_card(data: list[tuple[Prop, int]], endline: str = "仓库列表"):
+    data.sort(key=lambda x: x[0].rare)
+
+    def result(prop: Prop, n: int):
+        quant = {0: "天", 1: "个"}.get(prop.flow)
+        return (
+            f"[color][{prop.color}]{prop.name}[nowrap][passport]\n"
+            f"[pixel][450]{prop.rare*'☆'}[nowrap][passport]\n"
+            f"[right]{'{:,}'.format(n)}{quant}"
+        )
+
+    return linecard(
+        "\n".join(result(*args) for args in data) + "\n" + end_line(endline),
+        font_manager,
+        40,
+        spacing=1.5,
+        width=880,
+        padding=(0, 0),
+    )
 
 
 def invest_card(data: list[tuple[Stock, int]]):
-    def output(font_manager: FontManager):
-        info = []
-        for stock, n in data:
-            stock_value = "{:,}".format(round(stock.float_gold / stock.issuance, 2))
-            info.append(
-                f"[pixel][20]公司 {stock.name}\n"
-                f"[pixel][20]结算 [nowrap]\n[color][green]{stock_value}[nowrap]\n"
-                f"[pixel][400]数量 [nowrap]\n[color][green]{n}"
-            )
-        info.append(end_line("投资列表"))
-        return linecard("\n".join(info), font_manager, 40, width=880)
-
-    return output
+    info = []
+    for stock, n in data:
+        stock_value = "{:,}".format(round(stock.float_gold / stock.issuance, 2))
+        info.append(
+            f"[pixel][20]公司 {stock.name}\n"
+            f"[pixel][20]结算 [nowrap]\n[color][green]{stock_value}[nowrap]\n"
+            f"[pixel][400]数量 [nowrap]\n[color][green]{n}"
+        )
+    info.append(end_line("投资列表"))
+    return linecard("\n".join(info), font_manager, 40, width=880)
 
 
 import numpy as np
@@ -113,46 +107,42 @@ def gacha_report_card(
 ):
     N = prop_n + air_n
     pt = prop_star / N
-
-    def output(font_manager: FontManager):
-        title = []
-        if not prop_n:
-            title.append("[center][color][#003300]理 想 气 体")
-        elif pt < curve_fit[1](N):
-            title.append("[center][color][#003300]很多空气")
-        elif pt < curve_fit[2](N):
-            title.append(
-                "[left][color][#003333]☆[nowrap][passport]\n[center]数据异常[nowrap][passport]\n[right]☆"
-            )
-        elif pt < curve_fit[3](N):
-            title.append(
-                "[left][color][#003366]☆ ☆[nowrap][passport]\n[center]一枚硬币[nowrap][passport]\n[right]☆ ☆"
-            )
-        elif pt < curve_fit[4](N):
-            title.append(
-                "[left][color][#003399]☆ ☆ ☆[nowrap][passport]\n[center]高斯分布[nowrap][passport]\n[right]☆ ☆ ☆"
-            )
-        elif pt < curve_fit[5](N):
-            title.append(
-                "[left][color][#0033CC]☆ ☆ ☆ ☆[nowrap][passport]\n[center]对称破缺[nowrap][passport]\n[right]☆ ☆ ☆ ☆"
-            )
-        elif pt < curve_fit[6](N):
-            title.append(
-                "[left][color][#0033FF]☆ ☆ ☆ ☆ ☆[nowrap][passport]\n[center]概率之子[nowrap][passport]\n[right]☆ ☆ ☆ ☆ ☆"
-            )
-        else:
-            title.append("[center][color][#FF0000]☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆")
+    title = []
+    if not prop_n:
+        title.append("[center][color][#003300]理 想 气 体")
+    elif pt < curve_fit[1](N):
+        title.append("[center][color][#003300]很多空气")
+    elif pt < curve_fit[2](N):
         title.append(
-            "----\n"
-            f"抽卡次数 {N}[nowrap]\n"
-            f"[pixel][450]空气占比 {round(air_n*100/N,2)}%\n"
-            f"获得☆ {prop_star}[nowrap]\n"
-            f"[pixel][450]获得☆ {air_star}\n"
-            f"道具平均☆ {round(prop_star/(prop_n or 1),3)}[nowrap]\n"
-            f"[pixel][450]空气平均☆ {round(air_star/(air_n or 1),3)}\n"
-            f"数据来源：{nickname}"
+            "[left][color][#003333]☆[nowrap][passport]\n[center]数据异常[nowrap][passport]\n[right]☆"
         )
-        title.append(end_line("抽卡报告"))
-        return linecard("\n".join(title), font_manager, 40, width=880)
-
-    return output
+    elif pt < curve_fit[3](N):
+        title.append(
+            "[left][color][#003366]☆ ☆[nowrap][passport]\n[center]一枚硬币[nowrap][passport]\n[right]☆ ☆"
+        )
+    elif pt < curve_fit[4](N):
+        title.append(
+            "[left][color][#003399]☆ ☆ ☆[nowrap][passport]\n[center]高斯分布[nowrap][passport]\n[right]☆ ☆ ☆"
+        )
+    elif pt < curve_fit[5](N):
+        title.append(
+            "[left][color][#0033CC]☆ ☆ ☆ ☆[nowrap][passport]\n[center]对称破缺[nowrap][passport]\n[right]☆ ☆ ☆ ☆"
+        )
+    elif pt < curve_fit[6](N):
+        title.append(
+            "[left][color][#0033FF]☆ ☆ ☆ ☆ ☆[nowrap][passport]\n[center]概率之子[nowrap][passport]\n[right]☆ ☆ ☆ ☆ ☆"
+        )
+    else:
+        title.append("[center][color][#FF0000]☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆☆")
+    title.append(
+        "----\n"
+        f"抽卡次数 {N}[nowrap]\n"
+        f"[pixel][450]空气占比 {round(air_n*100/N,2)}%\n"
+        f"获得☆ {prop_star}[nowrap]\n"
+        f"[pixel][450]获得☆ {air_star}\n"
+        f"道具平均☆ {round(prop_star/(prop_n or 1),3)}[nowrap]\n"
+        f"[pixel][450]空气平均☆ {round(air_star/(air_n or 1),3)}\n"
+        f"数据来源：{nickname}"
+    )
+    title.append(end_line("抽卡报告"))
+    return linecard("\n".join(title), font_manager, 40, width=880)
