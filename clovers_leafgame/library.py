@@ -1,7 +1,6 @@
 import os
 import json
 import random
-import numpy as np
 from pathlib import Path
 from .core.data import Prop
 
@@ -23,12 +22,12 @@ def prop_search(prop_name: str):
     return props_library[prop_code]
 
 
-GOLD = props_library["12101"]
-VIP_CARD = props_library["42001"]
-RED_PACK = props_library["52103"]
-AIR = props_library["11001"]
-AIR_PACK = props_library["03103"]
-LICENSE = props_library["33001"]
+GOLD = prop_search("金币")
+VIP_CARD = prop_search("钻石会员卡")
+RED_PACK = prop_search("随机红包")
+AIR = prop_search("空气")
+AIR_PACK = prop_search("空气礼包")
+LICENSE = prop_search("设置许可证")
 
 prop_pool = {}
 prop_pool[3] = ["优质空气", "四叶草标记", "挑战徽章", "设置许可证", "初级元素"]
@@ -44,7 +43,7 @@ prop_pool[5] = [
 prop_pool[6] = ["纯净空气", "钻石", "道具兑换券", "超级幸运硬币", "重开券"]
 
 for k, v in prop_pool.items():
-    prop_pool[k] = [prop_search(i).object_code for i in v]
+    prop_pool[k] = [prop_search(i).id for i in v]
 
 
 def gacha() -> str:
@@ -62,26 +61,4 @@ def gacha() -> str:
         rare += 1
     if rare_pool := prop_pool.get(rare):
         return random.choice(rare_pool)
-    return "11001"
-
-
-curve_fit = {
-    1: lambda x: 0.339438628551138 * np.log(2.7606559801569316e-13 * x)
-    + -0.0012286453324789554 * x
-    + 9.310675305999386,
-    2: lambda x: 0.2622830460672209 * np.log(1.0565997436401555e-10 * x)
-    + -0.0013800074822243364 * x
-    + 6.079586419253099,
-    3: lambda x: 0.16563555661021917 * np.log(652.209392293454 * x)
-    + -0.0009688421476907207 * x
-    + -0.5084815403474984,
-    4: lambda x: -0.11977280212351049 * np.log(3.53822027614143e-11 * x)
-    + 0.0005645672140693966 * x
-    + -0.9186502372819698,
-    5: lambda x: -0.27071466714377795 * np.log(1.2743174700041504e-11 * x)
-    + 0.0014031052967047675 * x
-    + -4.106094299018067,
-    6: lambda x: -0.5213387432196357 * np.log(16.300736342820436 * x)
-    + 0.0027842719423569447 * x
-    + 5.3464181044586425,
-}
+    return AIR.id

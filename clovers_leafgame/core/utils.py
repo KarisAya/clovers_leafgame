@@ -14,9 +14,9 @@ int_dict = {
 }
 
 
-def to_int(N, default: int = None) -> int:
+def to_int(N) -> int:
     try:
         result = int(N)
     except ValueError:
-        result = int_dict.get(N, default)
+        result = int_dict.get(N)
     return result

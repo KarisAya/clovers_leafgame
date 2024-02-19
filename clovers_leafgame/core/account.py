@@ -9,7 +9,7 @@ from sys import platform
 
 from clovers_core.plugin import Result
 from .clovers import Event
-from .data import Bank, Prop, Account, User, Group, Account, DataBase
+from .data import Bank, Prop, Stock, Account, User, Group, Account, DataBase
 
 
 # self.locate_user_bank: Callable[[Account], Bank] = {
@@ -37,23 +37,30 @@ class Manager:
     ————————————————————
     +++++++++++++++++"""
 
-    data: DataBase = DataBase()
+    data: DataBase
     file_path: Path
     extra: dict = {}
     group_index: dict[str, str] = {}
 
+    def __init__(self, file_path: Path) -> None:
+        self.file_path = file_path
+        self.load()
+        self.group_index_update()
+
     def save(self):
-        self.data.save(self.file_path)
+        with open(self.file_path, "w") as f:
+            f.write(self.data.json(indent=4))
 
     def load(self):
         if self.file_path.exists():
-            self.data.load(self.file_path)
+            with open(self.file_path, "r") as f:
+                self.data = DataBase.parse_obj(json.load(f))
 
     def group_index_update(self):
         d = self.data.group_dict
         self.group_index.clear()
         self.group_index.update({k: k for k in d})
-        self.group_index.update({s: k for k, v in d.items() if (s := v.stock_name)})
+        self.group_index.update({i: k for k, v in d.items() if (i := v.stock.name)})
 
     def group_search(self, group_name: str, retry: bool = True) -> Group:
         group_id = self.group_index.get(group_name)
@@ -62,6 +69,10 @@ class Manager:
         if retry:
             self.group_index_update()
             return self.group_search(group_name, False)
+
+    def stock_search(self, stock_name: str):
+        if group := self.group_search(stock_name):
+            return group.stock
 
     def locate_group(self, group_id: str) -> Group:
         """
@@ -91,8 +102,10 @@ class Manager:
         user_id = event.user_id
         user = self.locate_user(user_id)
         if event.is_private():
-            user.nickname = event.nickname
+            user.name = event.nickname
             return user, user.connecting()
+        if not user.name:
+            user.name = event.nickname
         group_id = event.group_id
         group = self.locate_group(group_id)
         group.namelist.add(user_id)

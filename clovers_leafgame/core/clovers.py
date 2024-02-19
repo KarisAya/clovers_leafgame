@@ -41,8 +41,8 @@ class Event:
     def group_info(self) -> list:
         return self.raw_event.kwargs["group_info"]
 
-    def args_to_int(self, default: int = None):
-        return to_int(self.raw_event.args[0], default)
+    def args_to_int(self):
+        return to_int(self.raw_event.args[0])
 
     def args_parse(self):
         args = self.raw_event.args

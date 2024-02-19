@@ -1,7 +1,3 @@
-import sys
-
-sys.path.append(r"D:\GIT\clovers_core")
-sys.path.append(r"D:\GIT\clovers_lite_game_core")
 from .clover import plugin
 from . import main as _
 

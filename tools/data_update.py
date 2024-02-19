@@ -5,13 +5,18 @@ from pydantic import BaseModel
 from datetime import datetime, timedelta
 from typing import Union
 
-resource_file = Path(os.path.dirname(__file__)).parent
+resource_file = Path(os.path.dirname(__file__))
 
 
 with open(resource_file / "props_library.json", "r", encoding="utf8") as f:
     props_library: dict = json.load(f)
 
 Bank = dict[str, int]
+
+
+class Stock(BaseModel):
+    id: str = None
+    name: str = None
 
 
 class OldGroupAccount(BaseModel):
@@ -44,7 +49,7 @@ class OldUserDict(BaseModel):
     lose: int = 0
     Achieve_win: int = 0
     Achieve_lose: int = 0
-    group_accounts: dict[str, OldGroupAccount] = {}
+    accounts: dict[str, OldGroupAccount] = {}
     connect: str = 0
     bank: Bank = {}
     props: dict[str, int] = {}
@@ -80,7 +85,7 @@ class OldCompany(BaseModel):
     """公司等级"""
     time: float = 0.0
     """注册时间"""
-    stock: int = 0
+    stock: Union[int, Stock] = Stock()
     """正在发行的股票数"""
     issuance: int = 0
     """股票发行量"""
@@ -146,22 +151,7 @@ class OldDataBase(BaseModel):
         从json字符串中加载数据
         """
         data_dict = json.loads(data)
-        Truedata = cls(file=Path(data_dict["file"]))
-        for user_id, user in data_dict["user"].items():
-            for group_id, group_account in user["group_accounts"].items():
-                user["group_accounts"][group_id] = OldGroupAccount.parse_obj(
-                    group_account
-                )
-            Truedata.user[user_id] = OldUserDict.parse_obj(user)
-
-        for group_id, group in data_dict["group"].items():
-            for user_id, exchange_info in group["company"]["exchange"].items():
-                group["company"]["exchange"][user_id] = ExchangeInfo.parse_obj(
-                    exchange_info
-                )
-            group["company"] = OldCompany.parse_obj(group["company"])
-            Truedata.group[group_id] = OldGroupDict.parse_obj(group)
-        return Truedata
+        return cls.parse_obj(data_dict)
 
 
 data_file = resource_file / "russian_data.json"
@@ -173,13 +163,13 @@ data.file = data_file
 for user in data.user.values():
     for group_account in user.group_accounts.values():
         group_account.bank = group_account.props
-        group_account.bank["12101"] = group_account.gold
+        group_account.bank["1111"] = group_account.gold
     user.bank = user.props
 
 for group in data.group.values():
     N = group.company.bank
     if isinstance(N, int):
-        group.company.bank = {"12101": N}
+        group.company.bank = {"1111": N}
 
 data.group_dict = data.group
 data.user_dict = data.user
