@@ -19,60 +19,44 @@ class Stock(BaseModel):
     name: str = None
 
 
-class OldGroupAccount(BaseModel):
+class Account(BaseModel):
     """
     用户群账户
     """
 
-    user_id: str = None
-    group_id: str = None
     nickname: str = None
-    is_sign: bool = False
     revolution: bool = False
-    security: int = 0
-    gold: int = 0
-    invest: dict[str, int] = {}
-    props: dict[str, int] = {}
-    bank: Bank = {}
+    props: Bank = Bank()
+    """更名为bank"""
+    bank: Bank = Bank()   
+    invest: Bank = Bank()
+    extra: dict = {}
 
-
-class OldUserDict(BaseModel):
-    """
-    用户字典
-    """
-
-    user_id: str = None
-    nickname: str = None
-    avatar_url: str = "https://avatars.githubusercontent.com/u/51886078"
-    gold: int = 0
-    win: int = 0
-    lose: int = 0
-    Achieve_win: int = 0
-    Achieve_lose: int = 0
-    accounts: dict[str, OldGroupAccount] = {}
-    connect: str = 0
-    bank: Bank = {}
-    props: dict[str, int] = {}
-    alchemy: dict[str, int] = {}
-
-
-class OldUserData(dict[str, OldUserDict]):
+class User(BaseModel):
     """
     用户数据
     """
 
+    user_id: str = None
+    nickname: str = None
+    """更名为name"""
+    name: str = None
+    avatar_url: str = None
+    win: int = 0
+    lose: int = 0
+    Achieve_win: int = 0
+    Achieve_lose: int = 0 
 
-class ExchangeInfo(BaseModel):
-    """
-    交易信息
-    """
+    gold: int = 0
+    """存入bank"""
+    accounts: dict[str, Account] = {}
+    connect: str = 0
+    props: Bank = Bank()
+    """更名为bank"""
+    bank: Bank = Bank()
 
-    group_id: str = None
-    quote: float = 0.0
-    n: int = 0
 
-
-class OldCompany(BaseModel):
+class Company(BaseModel):
     """
     公司账户
     """
@@ -95,8 +79,8 @@ class OldCompany(BaseModel):
     """浮动资产"""
     group_gold: float = 0.0
     """全群资产"""
-    bank: Union[int, Bank] = 0
-    """群金库"""
+    bank: int = 0
+    """群金币，存入group bank字段"""
     invest: dict[str, int] = {}
     """群投资"""
     transfer_limit: float = 0.0
@@ -105,13 +89,11 @@ class OldCompany(BaseModel):
     """今日转账额"""
     intro: str = None
     """群介绍"""
-    exchange: dict[str, ExchangeInfo] = {}
-    """本群交易市场"""
     orders: dict = {}
     """当前订单"""
 
 
-class OldGroupDict(BaseModel):
+class Group(BaseModel):
     """
     群字典
     """
@@ -119,24 +101,26 @@ class OldGroupDict(BaseModel):
     group_id: str = None
     namelist: set = set()
     revolution_time: float = 0.0
+    """存入extra"""
     Achieve_revolution: dict[str, int] = {}
-    company: OldCompany = OldCompany()
+    """存入extra"""
+    company: Company = Company()
+    """已取消"""
+    stock: Stock = Stock()
+    level: int = 1
+    bank: Bank = Bank()
+    invest: Bank = Bank()
+    intro: str = None
+    """群介绍"""
+    extra: dict = {}
 
 
-class OldGroupData(dict[str, OldGroupDict]):
-    """
-    群数据
-    """
+class DataBase(BaseModel):
+    user: dict[str, User] = {}
+    group: dict[str, Group] = {}
 
-    pass
-
-
-class OldDataBase(BaseModel):
-    user: OldUserData = OldUserData()
-    user_dict: OldUserData = None
-    group: OldGroupData = OldGroupData()
-    group_dict: OldGroupData = None
-    file: Path
+    user_dict: dict[str, User] = {}
+    group_dict: dict[str, Group] = {}
 
     def save(self):
         """
@@ -156,7 +140,7 @@ class OldDataBase(BaseModel):
 
 data_file = resource_file / "russian_data.json"
 with open(data_file, "r") as f:
-    data = OldDataBase.loads(f.read())
+    data = DataBase.loads(f.read())
 
 data.file = data_file
 

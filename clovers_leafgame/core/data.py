@@ -81,7 +81,8 @@ class Prop(Item):
 
 
 class Stock(Item, BaseModel):
-    pass
+    issuance: int = 0
+    """股票发行量"""
 
 
 class Account(BaseModel):
@@ -150,8 +151,6 @@ class Group(BaseModel):
     """发行ID"""
     level: int = 1
     """群等级"""
-    issuance: int = 0
-    """股票发行量"""
     bank: Bank = Bank()
     """群金库"""
     invest: Bank = Bank()
