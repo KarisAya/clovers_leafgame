@@ -457,6 +457,6 @@ async def _(event: Event) -> Result:
     return f"你获得了{N}个【{prop.name}】！"
 
 
-@plugin.loading
+@plugin.task
 async def _():
     print("游戏数据已保存！")
