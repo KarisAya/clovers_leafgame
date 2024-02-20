@@ -377,13 +377,12 @@ async def _(event: Event) -> Result:
     for seg in data:
         prop, n = seg
         prop_data[prop.domain].append(seg)
-        bank = user.locate_bank(group_id, prop.domain)
-        prop.deal(bank, n)
         rare = prop.rare
         if prop.domain == 0:
             report_data["air_star"] += rare * n
             report_data["air_n"] += n
         else:
+            user.deal(group_id, prop, n)
             report_data["prop_star"] += rare * n
             report_data["prop_n"] += n
     info = []
@@ -437,13 +436,16 @@ async def _(event: Event) -> Result:
     {"user_id", "group_id"},
 )
 async def _(event: Event):
-    user_id = event.user_id
     group_name = (
-        event.single_arg() or event.group_id or manager.locate_user(user_id).connect
+        event.single_arg()
+        or event.group_id
+        or manager.locate_user(event.user_id).connect
     )
     if not group_name:
         return "您的账户没有关联到群组。无法查看群排行"
-
+    group = manager.group_search(group_name)
+    if not group:
+        return f"【{group_name}】不存在"
     title = re.search(
         r"^(总金币|总资产|金币|资产|财富|胜率|胜场|败场|路灯挂件)(排行|榜)",
         event.raw_event.raw_command.strip(),
@@ -466,28 +468,21 @@ async def _(event: Event):
                 )
                 for group_id, account in manager.locate_user(user_id).accounts.items()
             )
-
-    # elif title == "总资产":
-    #     for user_id in namelist:
-    #         user = user_data[user_id]
-    #         rank.append(
-    #             [
-    #                 user_id,
-    #                 sum(
-    #                     invest_value(group_account.invest)
-    #                     for group_account in user.group_accounts.values()
-    #                 ),
-    #             ]
-    #         )
-    # elif title == "金币":
-    #     for user_id in namelist:
-    #         group_account = user_data[user_id].group_accounts[group_id]
-    #         rank.append([user_id, group_account.gold])
-    # elif title == "资产" or title == "财富":
-    #     rank = [
-    #         [user_id, invest_value(user_data[user_id].group_accounts[group_id].invest)]
-    #         for user_id in namelist
-    #     ]
+        case "金币":
+            key = (
+                lambda user_id: manager.locate_user(user_id)
+                .locate_bank(group.group_id, GOLD.domain)
+                .get(GOLD.id, 0)
+            )
+        case "资产":
+            key = lambda user_id: sum(
+                stock.stock_value * v / stock.issuance
+                for k, v in manager.locate_user(user_id)
+                .connecting(group.group_id)
+                .invest
+                if (stock := manager.stock_search(k))
+            )
+        case "胜率":
     # elif title == "胜率":
     #     for user_id in namelist:
     #         user = user_data[user_id]

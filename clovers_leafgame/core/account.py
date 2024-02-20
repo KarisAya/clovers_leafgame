@@ -113,21 +113,17 @@ class Manager:
             for user_id in group.namelist
         )
 
-    def group_ranklist(
+    def ranklist(
         self,
-        group_name: str,
+        namelist: set[str],
         key: RankKey,
         reverse: bool = True,
     ):
         """
-        群内用户排行榜
+        用户排行榜
             param:
-                group_id:群号
                 key:从用户寻找可以排名的排名内容
         """
-        group = self.group_search(group_name)
-        if not group:
-            return
-        data = [(k, v) for k in group.namelist if (v := key(k))]
+        data = [(k, v) for k in namelist if (v := key(k))]
         data.sort(key=lambda x: x[1], reverse=reverse)
         return data
