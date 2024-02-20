@@ -112,3 +112,16 @@ class Manager:
         account = user.connecting(group_id)
         account.nickname = event.nickname
         return user, account
+
+    def group_wealths(self, group_id: str, prop_id: str) -> int:
+        """
+        群内总资产
+        """
+        group = self.group_search(group_id)
+        if not group:
+            return 0
+
+        return group.bank.get(prop_id, 0) + sum(
+            self.locate_user(user_id).connecting(group_id).bank.get(prop_id, 0)
+            for user_id in group.namelist
+        )

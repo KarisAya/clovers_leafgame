@@ -1,7 +1,5 @@
 from .core.data import Bank, Item, Prop, Stock
-from .core.clovers import Event
 from .utils.linecard import FontManager, linecard
-from collections.abc import Callable
 from .config import config
 
 font_manager = FontManager(

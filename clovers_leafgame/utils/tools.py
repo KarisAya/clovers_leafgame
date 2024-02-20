@@ -41,6 +41,26 @@ def format_number(num) -> str:
         return f"{z}万亿"
 
 
+def item_name_rule(item_name: str):
+    if not item_name:
+        return f"名称不能为空"
+    if " " in item_name or "\n" in item_name:
+        return "名称不能含有空格或回车"
+    count = 0
+    for x in item_name:
+        if ord(x) < 0x200:
+            count += 1
+        else:
+            count += 2
+    if count > 24:
+        return f"名称不能超过24字符"
+    try:
+        int(item_name)
+        return f"名称不能是数字"
+    except:
+        return None
+
+
 def gini_coef(wealths: list) -> float:
     """
     计算基尼系数

@@ -1,5 +1,5 @@
 from io import BytesIO
-from collections.abc import Coroutine
+from collections.abc import Callable, Coroutine
 from clovers_core.plugin import Plugin, Result
 from .core.clovers import Event
 
@@ -38,9 +38,9 @@ class Check:
         self.group_admin: bool = group_admin
         self.to_me: bool = to_me
         self.at: bool = at
-        self.check = []
+        self.check: list[Callable[[Event], bool]] = []
 
-    def wrapper(self, func: Coroutine):
+    def wrapper(self, func: Callable[[Event], Coroutine]):
         if self.superuser:
             self.check.append(lambda event: event.permission > 2)
         elif self.group_owner:
@@ -56,7 +56,7 @@ class Check:
             check = self.check[0]
         else:
 
-            def check_all(event: Event) -> bool:
+            def check_all(event: Event):
                 for check in self.check:
                     if not check(event):
                         return False
@@ -64,15 +64,9 @@ class Check:
 
             check = check_all
 
-        async def decorator(event: Event) -> Result:
+        async def decorator(event: Event):
             if not check(event):
                 return
             return await func(event)
 
         return decorator
-
-
-check_to_me = Check(to_me=True)
-check_superuser = Check(superuser=True)
-check_group_admin = Check(group_admin=True)
-check_at = Check(at=True)

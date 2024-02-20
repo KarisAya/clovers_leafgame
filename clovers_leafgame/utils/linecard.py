@@ -1,19 +1,13 @@
-from typing import Tuple, List
+import re
 from pathlib import Path
 from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
+from fontTools.ttLib import TTFont
+
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from PIL.ImageFont import FreeTypeFont
 from PIL.Image import Image as IMG
-from fontTools.ttLib import TTFont
-from collections import Counter
 
-import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
-import seaborn as sns
-import numpy as np
-
-import re
-from re import Pattern
 
 
 class FontManager:
@@ -48,7 +42,7 @@ def linecard_to_png(text: str, font_manager: FontManager, **kwargs):
     return output
 
 
-def remove_tag(text: str, pattern: Pattern):
+def remove_tag(text: str, pattern: re.Pattern):
     match = pattern.search(text)
     if match:
         start = match.start()
@@ -83,12 +77,12 @@ class Tag:
 
 
 class linecard_pattern:
-    align: Pattern = re.compile(r"\[left\]|\[right\]|\[center\]|\[pixel\]\[.*?\]")
-    font: Pattern = re.compile(r"\[font\]\[.*?\]\[.*?\]")
-    color: Pattern = re.compile(r"\[color\]\[.*?\]")
-    passport: Pattern = re.compile(r"\[passport\]")
-    nowrap: Pattern = re.compile(r"\[nowrap\]")
-    noautowrap: Pattern = re.compile(r"\[noautowrap\]")
+    align = re.compile(r"\[left\]|\[right\]|\[center\]|\[pixel\]\[.*?\]")
+    font = re.compile(r"\[font\]\[.*?\]\[.*?\]")
+    color = re.compile(r"\[color\]\[.*?\]")
+    passport = re.compile(r"\[passport\]")
+    nowrap = re.compile(r"\[nowrap\]")
+    noautowrap = re.compile(r"\[noautowrap\]")
 
 
 def linecard(
@@ -262,7 +256,7 @@ def linecard(
 
 
 def info_splicing(
-    info: List[IMG],
+    info: list[IMG],
     BG_path: Path = None,
     width: int = 880,
     padding: int = 20,
@@ -319,7 +313,7 @@ def info_splicing(
     return output
 
 
-def CropResize(img: IMG, size: Tuple[int, int]):
+def CropResize(img: IMG, size: tuple[int, int]):
     """
     修改图像尺寸
     """

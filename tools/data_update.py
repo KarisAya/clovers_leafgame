@@ -21,12 +21,6 @@ class Stock(BaseModel):
     """注册时间"""
     issuance: int = 0
     """股票发行量"""
-    gold: float = 0.0
-    """固定资产"""
-    float_gold: float = 0.0
-    """浮动资产"""
-    group_gold: float = 0.0
-    """全群资产"""
 
 
 class Account(BaseModel):

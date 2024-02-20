@@ -3,8 +3,6 @@ import math
 import re
 from pathlib import Path
 from datetime import datetime
-from collections import Counter
-from collections.abc import Callable
 from clovers_core.plugin import Result
 
 from .core.clovers import Event
@@ -13,10 +11,10 @@ from .core.data import Bank, Prop, Group
 from .core.utils import to_int
 
 from .config import config, BG_PATH
-from .clover import plugin, check_to_me, check_superuser, check_group_admin, check_at
+from .clover import plugin, Check
 from .library import prop_search, GOLD, VIP_CARD, AIR_PACK, LICENSE, gacha
-from .utils.linecard import FontManager, info_splicing
-from .utils.tools import download_url
+from .utils.linecard import info_splicing
+from .utils.tools import download_url, item_name_rule, gini_coef
 from .output import (
     bank_to_data,
     bank_card,
@@ -32,6 +30,11 @@ company_public_gold = config.company_public_gold
 gacha_gold = config.gacha_gold
 
 manager = Manager(Path(config.main_path) / "russian_data.json")
+
+to_me = Check(to_me=True)
+superuser = Check(superuser=True)
+group_admin = Check(group_admin=True)
+at = Check(at=True)
 
 
 def info_card(info, user_id):
@@ -72,7 +75,7 @@ async def _(event: Event) -> Result:
 
 
 @plugin.handle({"发红包", "赠送金币"}, {"user_id", "group_id", "at", "permission"})
-@check_at.wrapper
+@at.wrapper
 async def _(event: Event) -> Result:
     group_id = event.group_id
     N = event.args_to_int() or random.randint(*sign_gold)
@@ -102,7 +105,7 @@ async def _(event: Event) -> Result:
 
 
 @plugin.handle({"送道具", "赠送道具"}, {"user_id", "group_id", "at", "permission"})
-@check_at.wrapper
+@at.wrapper
 async def _(event: Event) -> Result:
     if not (args := event.args_parse()):
         return
@@ -216,7 +219,7 @@ async def _(event: Event) -> Result:
 
 
 @plugin.handle({"设置背景"}, {"user_id", "to_me", "image_list"})
-@check_to_me.wrapper
+@to_me.wrapper
 async def _(event: Event) -> Result:
     user_id = event.user_id
     user = manager.locate_user(user_id)
@@ -248,7 +251,7 @@ async def _(event: Event) -> Result:
 
 
 @plugin.handle({"删除背景"}, {"user_id", "to_me"})
-@check_to_me.wrapper
+@to_me.wrapper
 async def _(event: Event) -> Result:
     Path.unlink(BG_PATH / f"{event.user_id}.png", True)
     return "背景图片删除成功！"
@@ -349,7 +352,7 @@ async def _(event: Event) -> Result:
 
 
 @plugin.handle(r"^.+连抽?卡?|单抽", {"user_id", "group_id", "nickname", "to_me"})
-@check_to_me.wrapper
+@to_me.wrapper
 async def _(event: Event) -> Result:
     N = re.search(r"^(.*)连抽?卡?$", event.raw_event.raw_command)
     if not N:
@@ -398,16 +401,39 @@ async def _(event: Event) -> Result:
     return info_card(info, user_id)
 
 
-"""+++++++++++++++++++++++++++++++++++++
-————————————————————
-   ᕱ⑅ᕱ。    超管权限指令
-  (｡•ᴗ-)_
-————————————————————
-+++++++++++++++++++++++++++++++++++++"""
+@plugin.handle({"市场注册", "公司注册", "注册公司"}, {"to_me", "permission"})
+@at.wrapper
+@group_admin.wrapper
+async def _(event: Event) -> Result:
+    group_id = event.group_id
+    group = manager.locate_group(group_id)
+    stock = group.stock
+    if stock.name:
+        return f"本群已在市场注册，注册名：{stock.name}"
+    stock_name = event.single_arg()
+    if manager.group_search(stock_name):
+        return f"{stock_name} 已被注册"
+    if check := item_name_rule(stock_name):
+        return check
+    stock_value = manager.group_wealths(group_id, GOLD.id)
+    if stock_value < (limit := company_public_gold):
+        return f"本群金币（{round(stock_value,2)}）小于{limit}，注册失败。"
+    gini = gini_coef(group_id)
+    if gini > 0.56:
+        return f"本群基尼系数（{round(gini,3)}）过高，注册失败。"
+    stock.id = group_id
+    stock.name = stock_name
+    stock.time = datetime.today()
+    group.extra.get("revolution", {}).values()
+    level = group.level = sum(group.extra.get("revolution", {}).values()) + 1
+    if stock.issuance == 0:
+        group.invest[group_id] = stock.issuance = 20000 * level
+    stock.fixed = stock.floating = stock.stock_value = stock_value * level
+    return f"{stock.name}发行成功，发行价格为{round((stock.stock_value/ 20000),2)}金币"
 
 
 @plugin.handle({"获取金币"}, {"user_id", "group_id", "permission"})
-@check_superuser.wrapper
+@superuser.wrapper
 async def _(event: Event) -> Result:
     N = event.args_to_int()
     user = manager.locate_user(event.user_id)
@@ -417,7 +443,7 @@ async def _(event: Event) -> Result:
 
 
 @plugin.handle({"获取道具"}, {"user_id", "group_id", "nickname", "permission"})
-@check_superuser.wrapper
+@superuser.wrapper
 async def _(event: Event) -> Result:
     if not (args := event.args_parse()):
         return
@@ -431,8 +457,6 @@ async def _(event: Event) -> Result:
     return f"你获得了{N}个【{prop.name}】！"
 
 
-@plugin.handle({"保存游戏"})
-@check_superuser.wrapper
-async def _(event: Event) -> Result:
+@plugin.loading
+async def _():
     print("游戏数据已保存！")
-    manager.save()
