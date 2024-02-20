@@ -432,6 +432,90 @@ async def _(event: Event) -> Result:
     return f"{stock.name}发行成功，发行价格为{round((stock.stock_value/ 20000),2)}金币"
 
 
+@plugin.handle(
+    r"^(总金币|总资产|金币|资产|财富|胜率|胜场|败场|路灯挂件)(排行|榜)",
+    {"user_id", "group_id"},
+)
+async def _(event: Event):
+    user_id = event.user_id
+    group_name = (
+        event.single_arg() or event.group_id or manager.locate_user(user_id).connect
+    )
+    if not group_name:
+        return "您的账户没有关联到群组。无法查看群排行"
+
+    title = re.search(
+        r"^(总金币|总资产|金币|资产|财富|胜率|胜场|败场|路灯挂件)(排行|榜)",
+        event.raw_event.raw_command.strip(),
+    ).group(1)
+    match title:
+        case "总金币":
+            key = lambda user_id: sum(
+                account.bank.get(GOLD.id, 0) * manager.locate_group(group_id).level
+                for group_id, account in manager.locate_user(user_id).accounts.items()
+            )
+        case "总资产":
+            key = lambda user_id: sum(
+                account.bank.get(GOLD.id, 0) * manager.locate_group(group_id).level
+                + sum(
+                    (
+                        stock.stock_value * v / stock.issuance
+                        for k, v in account.invest.items()
+                        if (stock := manager.stock_search(k))
+                    )
+                )
+                for group_id, account in manager.locate_user(user_id).accounts.items()
+            )
+
+    # elif title == "总资产":
+    #     for user_id in namelist:
+    #         user = user_data[user_id]
+    #         rank.append(
+    #             [
+    #                 user_id,
+    #                 sum(
+    #                     invest_value(group_account.invest)
+    #                     for group_account in user.group_accounts.values()
+    #                 ),
+    #             ]
+    #         )
+    # elif title == "金币":
+    #     for user_id in namelist:
+    #         group_account = user_data[user_id].group_accounts[group_id]
+    #         rank.append([user_id, group_account.gold])
+    # elif title == "资产" or title == "财富":
+    #     rank = [
+    #         [user_id, invest_value(user_data[user_id].group_accounts[group_id].invest)]
+    #         for user_id in namelist
+    #     ]
+    # elif title == "胜率":
+    #     for user_id in namelist:
+    #         user = user_data[user_id]
+    #         if (count := user.win + user.lose) > 2:
+    #             rank.append([user_id, user.win / count])
+    # elif title == "胜场":
+    #     for user_id in namelist:
+    #         user = user_data[user_id]
+    #         rank.append([user_id, user.win])
+    # elif title == "败场":
+    #     for user_id in namelist:
+    #         user = user_data[user_id]
+    #         rank.append([user_id, user.lose])
+    # elif title == "路灯挂件":
+    #     rank = group_data[group_id].Achieve_revolution.items()
+    # else:
+    #     return None
+
+    ranklist = manager.group_ranklist(group_name, title)
+    if not ranklist:
+        return
+    rank_data = ranklist
+    return await draw_rank(rank_data, title)
+
+
+# 超管指令
+
+
 @plugin.handle({"获取金币"}, {"user_id", "group_id", "permission"})
 @superuser.wrapper
 async def _(event: Event) -> Result:

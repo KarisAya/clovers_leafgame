@@ -1,15 +1,14 @@
 import asyncio
 import timeit
 
-itr = (i for i in range(500))
-ist = [x for x in itr]
-time_taken = timeit.timeit(lambda: list(itr), number=10000)
-print(f"Time taken: {time_taken} seconds")
-
-time_taken = timeit.timeit(lambda: list(ist), number=10000)
-print(f"Time taken: {time_taken} seconds")
-
-exit()
+value = 2
+match value:
+    case 0:
+        print("value is zero")
+    case 1, 2, 3, 4:
+        print(f"value is {value}")
+    case _:
+        print("value is something else")
 
 for a in zip([1, 2], [3, 4]):
     print(a)

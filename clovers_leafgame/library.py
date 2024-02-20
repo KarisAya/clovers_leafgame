@@ -2,7 +2,9 @@ import os
 import json
 import random
 from pathlib import Path
-from .core.data import Prop
+from collections.abc import Callable, Coroutine
+from .core.data import Prop, User
+from .core.account import RankKey
 
 resource_file = Path(os.path.join(os.path.dirname(__file__), "./resource"))
 

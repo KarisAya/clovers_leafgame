@@ -11,22 +11,9 @@ from clovers_core.plugin import Result
 from .clovers import Event
 from .data import Bank, Prop, Stock, Account, User, Group, Account, DataBase
 
-
-# self.locate_user_bank: Callable[[Account], Bank] = {
-#     0: lambda account: account[1].invest,
-#     3: lambda account: account[0].bank,
-# }.get(self.domain, lambda account: account[1].bank)
-# self.locate_corp_bank: Callable[[Group], Bank] = {
-#     0: lambda group: group.invest,
-# }.get(self.domain, lambda group: group.bank)
-# self.user_prop_N: Callable[[Account], int] = (
-#     lambda account: self.locate_user_bank(account).get(self.object_code, 0)
-# )
-# self.corp_prop_N: Callable[[Group], int] = lambda group: self.locate_corp_bank(
-#     group
-# ).get(self.object_code, 0)
-
 UserAccount = tuple[User, Account]
+
+RankKey = Callable[[str], int | float]
 
 
 class Manager:
@@ -125,3 +112,22 @@ class Manager:
             self.locate_user(user_id).connecting(group_id).bank.get(prop_id, 0)
             for user_id in group.namelist
         )
+
+    def group_ranklist(
+        self,
+        group_name: str,
+        key: RankKey,
+        reverse: bool = True,
+    ):
+        """
+        群内用户排行榜
+            param:
+                group_id:群号
+                key:从用户寻找可以排名的排名内容
+        """
+        group = self.group_search(group_name)
+        if not group:
+            return
+        data = [(k, v) for k in group.namelist if (v := key(k))]
+        data.sort(key=lambda x: x[1], reverse=reverse)
+        return data

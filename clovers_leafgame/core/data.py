@@ -123,8 +123,12 @@ class User(BaseModel):
         group_id = group_id or self.connect
         return self.accounts.setdefault(group_id, Account(nickname=self.name))
 
-    def locate_bank(self, group_id: str, domain: int) -> Bank:
-        return bank(self, group_id) if (bank := bank_dict.get(domain)) else {}
+    def locate_bank(self, group_id: str, domain: int):
+        match domain:
+            case 2:
+                return self.connecting(group_id).bank
+            case _:
+                return self.bank
 
     def deal(self, group_id: str, prop: Prop, unsettled: int):
         return prop.deal(self.locate_bank(group_id, prop.domain), unsettled)
@@ -135,12 +139,6 @@ class User(BaseModel):
         return self.name
 
 
-bank_dict: dict[int, Callable[[User, str], Bank]] = {
-    1: lambda user, group_id: user.bank,
-    2: lambda user, group_id: user.connecting(group_id).bank,
-}
-
-
 class Group(BaseModel):
     """
     群字典
@@ -148,7 +146,7 @@ class Group(BaseModel):
 
     group_id: str = None
     """群号"""
-    namelist: set = set()
+    namelist: set[str] = set()
     """群员名单"""
     stock: Stock = Stock()
     """发行ID"""
